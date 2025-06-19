@@ -30,7 +30,3 @@
 - **GC 0B 유지**
   - 초당 1000개 생성/반환 테스트에서도 GarbageCollector 안뜸
 
-## 설치 방법
-
-### 1. 유니티 패키지 매니저로 설치
-"com.nsj.easypoolkit": "https://github.com/your-repo-url.git"
