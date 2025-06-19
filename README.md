@@ -33,4 +33,4 @@
 ## 설치 방법
 
 ### 1. 유니티 패키지 매니저로 설치
-`Packages`
+"com.nsj.easypoolkit": "https://github.com/your-repo-url.git"
