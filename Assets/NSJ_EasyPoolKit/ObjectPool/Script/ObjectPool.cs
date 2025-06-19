@@ -470,7 +470,6 @@ namespace NSJ_EasyPoolKit
                     instance.transform.rotation = transform.rotation;
                 }
                 instance.gameObject.SetActive(true);
-                SceneManager.MoveGameObjectToScene(instance, SceneManager.GetActiveScene());
                 poolObject = instance.GetComponent<PooledObject>();
             }
             else
