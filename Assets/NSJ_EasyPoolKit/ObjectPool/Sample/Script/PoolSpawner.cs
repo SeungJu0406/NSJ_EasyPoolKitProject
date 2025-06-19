@@ -8,6 +8,7 @@ namespace NSJ_EasyPoolKit
     {
         [SerializeField] private Button _getButton;
         [SerializeField] private Button _returnButton;
+        [SerializeField] private Text _text;
 
         [SerializeField] private SampleObject _samplePrefab;
         [SerializeField] private Vector3 _randomRange;
@@ -30,6 +31,9 @@ namespace NSJ_EasyPoolKit
             _sampleQueue.Enqueue(newObj);
 
             newObj.transform.position = GetRandomPos();
+
+            PooledObject pooled = newObj.GetComponent<PooledObject>();
+            _text.text = $"Active: {pooled.PoolInfo.ActiveCount} / Total: {pooled.PoolInfo.PoolCount}";
         }
         private void ReturnObject()
         {
@@ -38,7 +42,9 @@ namespace NSJ_EasyPoolKit
                 SampleObject obj = _sampleQueue.Dequeue();
 
                 // Return Method
-                ObjectPool.Return(obj).OnDebug("ReturnPool Test");
+                IPoolInfoReadOnly poolInfoReadOnly = ObjectPool.Return(obj).OnDebug("ReturnPool Test");
+
+                _text.text = $"Active: {poolInfoReadOnly.ActiveCount} / Total: {poolInfoReadOnly.PoolCount}";
             }
         }
 
