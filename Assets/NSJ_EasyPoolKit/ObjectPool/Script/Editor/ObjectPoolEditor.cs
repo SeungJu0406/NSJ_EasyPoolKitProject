@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace NSJ_ObjectPool
+namespace NSJ_EasyPoolKit
 {
     // This script is part of a Unity Asset Store package.
     // Unauthorized copying, modification, or redistribution of this code is strictly prohibited.

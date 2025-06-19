@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace NSJ_ObjectPool
+namespace NSJ_EasyPoolKit
 {
     // This script is part of a Unity Asset Store package.
     // Unauthorized copying, modification, or redistribution of this code is strictly prohibited.
@@ -12,11 +12,16 @@ namespace NSJ_ObjectPool
 
         IPooledObject _poolObject;
 
+        public Rigidbody CachedRb {  get; private set; }
+        public Rigidbody2D CachedRb2D {  get; private set; }
+
         public event Action OnReturn;
 
         private void Awake()
         {
             _poolObject = GetComponent<IPooledObject>();
+            CachedRb = GetComponent<Rigidbody>();
+            CachedRb2D = GetComponent<Rigidbody2D>();
         }
 
         private void OnDisable()

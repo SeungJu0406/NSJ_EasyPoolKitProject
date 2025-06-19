@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace NSJ_ObjectPool
+namespace NSJ_EasyPoolKit
 {
     public static class ResourcesPool
     {

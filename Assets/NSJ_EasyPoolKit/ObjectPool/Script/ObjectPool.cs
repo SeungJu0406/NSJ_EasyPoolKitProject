@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.VisualScripting;
@@ -8,7 +7,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
-namespace NSJ_ObjectPool
+namespace NSJ_EasyPoolKit
 {
     // This script is part of a Unity Asset Store package.
     // Unauthorized copying, modification, or redistribution of this code is strictly prohibited.
@@ -168,7 +167,7 @@ namespace NSJ_ObjectPool
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다.
         /// </summary>
-        public static T Get<T>(T prefab, Transform transform, bool worldPositionStay =false) where T : Component
+        public static T Get<T>(T prefab, Transform transform, bool worldPositionStay = false) where T : Component
         {
             PoolInfo info = FindPool(prefab.gameObject);
             GameObject instance = ProcessGet(info, transform, worldPositionStay);
@@ -323,7 +322,7 @@ namespace NSJ_ObjectPool
         /// </summary>
         private static PoolInfo FindPool(GameObject poolPrefab)
         {
-            if(poolPrefab == null)
+            if (poolPrefab == null)
             {
                 Debug.LogError($"{poolPrefab}가 참조되어 있지 않습니다");
                 return null;
@@ -366,7 +365,7 @@ namespace NSJ_ObjectPool
                 // 리소시스 풀에 등록
                 resourcePool.Add(resources, prefabID);
             }
-          
+
             pool = Instance._poolDic[resourcePool[resources]];
             pool.IsUsed = true;
             Instance._poolDic[resourcePool[resources]] = pool;
@@ -430,6 +429,8 @@ namespace NSJ_ObjectPool
                 instance.transform.rotation = Quaternion.identity;
                 instance.transform.SetParent(null);
                 instance.gameObject.SetActive(true);
+                SceneManager.MoveGameObjectToScene(instance, SceneManager.GetActiveScene());
+
                 poolObject = instance.GetComponent<PooledObject>();
 
             }
@@ -439,6 +440,9 @@ namespace NSJ_ObjectPool
                 instance = Instantiate(info.Prefab);
                 poolObject = AddPoolObjectComponent(instance, info);
             }
+            // Rigidbody 초기화
+            WakeUpRigidBody(poolObject);
+
             poolObject.InitPooledObject();
             info.ActiveCount++;
             return instance;
@@ -466,6 +470,7 @@ namespace NSJ_ObjectPool
                     instance.transform.rotation = transform.rotation;
                 }
                 instance.gameObject.SetActive(true);
+                SceneManager.MoveGameObjectToScene(instance, SceneManager.GetActiveScene());
                 poolObject = instance.GetComponent<PooledObject>();
             }
             else
@@ -474,6 +479,9 @@ namespace NSJ_ObjectPool
                 instance = Instantiate(info.Prefab, transform, worldPositionStay);
                 poolObject = AddPoolObjectComponent(instance, info);
             }
+            // Rigidbody 초기화
+            WakeUpRigidBody(poolObject);
+
             poolObject.InitPooledObject();
             info.ActiveCount++;
             return instance;
@@ -483,7 +491,7 @@ namespace NSJ_ObjectPool
         /// </summary>
         private static GameObject ProcessGet(PoolInfo info, Vector3 pos, Quaternion rot)
         {
-            GameObject instance = null;     
+            GameObject instance = null;
 
             PooledObject poolObject = null;
 
@@ -495,6 +503,7 @@ namespace NSJ_ObjectPool
                 instance.transform.rotation = rot;
                 instance.transform.SetParent(null);
                 instance.gameObject.SetActive(true);
+                SceneManager.MoveGameObjectToScene(instance, SceneManager.GetActiveScene());
                 poolObject = instance.GetComponent<PooledObject>();
             }
             else
@@ -503,6 +512,8 @@ namespace NSJ_ObjectPool
                 instance = Instantiate(info.Prefab, pos, rot);
                 poolObject = AddPoolObjectComponent(instance, info);
             }
+            // Rigidbody 초기화
+            WakeUpRigidBody(poolObject);
 
             poolObject.InitPooledObject();
             info.ActiveCount++;
@@ -531,10 +542,83 @@ namespace NSJ_ObjectPool
             instance.transform.localScale = info.Prefab.transform.localScale;
             instance.transform.SetParent(info.Parent);
 
+            // RigidBody 초기화
+            SleepRigidbody(poolObject);
+
             instance.gameObject.SetActive(false);
             info.Pool.Push(instance.gameObject);
 
             return info;
+        }
+
+        private static void SleepRigidbody(PooledObject instance)
+        {
+#if UNITY_6000_0_OR_NEWER
+            Rigidbody rb = instance.CachedRb;
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.Sleep();
+            }
+            Rigidbody2D rb2D = instance.CachedRb2D;
+            if (rb2D != null)
+            {
+                rb2D.linearVelocity = Vector2.zero;
+                rb2D.angularVelocity = 0;
+                rb2D.Sleep();
+            }
+#else
+            Rigidbody rb = instance.CachedRb;
+            if (rb != null)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.Sleep();
+            }
+            Rigidbody2D rb2D = instance.CachedRb2D;
+            if (rb2D != null)
+            {
+                rb2d.velocity = Vector2.zero;
+                rb2d.angularVelocity = 0f;
+                rb2d.Sleep();
+            }
+#endif
+        }
+
+        private static void WakeUpRigidBody(PooledObject instance)
+        {
+#if UNITY_6000_0_OR_NEWER
+            Rigidbody rb = instance.CachedRb;
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.WakeUp();
+            }
+            Rigidbody2D rb2D = instance.CachedRb2D;
+            if (rb2D != null)
+            {
+                rb2D.linearVelocity = Vector2.zero;
+                rb2D.angularVelocity = 0;
+                rb2D.WakeUp();
+            }
+#else
+            Rigidbody rb = instance.CachedRb;
+            if (rb != null)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.WakeUp();
+            }
+            Rigidbody2D rb2D = instance.CachedRb2D;
+            if (rb2D != null)
+            {
+                rb2d.velocity = Vector2.zero;
+                rb2d.angularVelocity = 0f;
+                rb2d.WakeUp();
+            }
+#endif
         }
         /// <summary>
         /// 현재 풀에 재사용 가능한 오브젝트가 존재하는지 확인합니다.
@@ -542,7 +626,7 @@ namespace NSJ_ObjectPool
         /// </summary>
         private static bool FindObject(PoolInfo info)
         {
-            if(info == null) return false;
+            if (info == null) return false;
 
             GameObject instance = null;
             while (true)
