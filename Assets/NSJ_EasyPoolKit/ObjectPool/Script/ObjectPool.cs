@@ -443,7 +443,7 @@ namespace NSJ_EasyPoolKit
             // Rigidbody 초기화
             WakeUpRigidBody(poolObject);
 
-            poolObject.InitPooledObject();
+            poolObject.OnCreateFromPool();
             info.ActiveCount++;
             return instance;
         }
@@ -481,7 +481,7 @@ namespace NSJ_EasyPoolKit
             // Rigidbody 초기화
             WakeUpRigidBody(poolObject);
 
-            poolObject.InitPooledObject();
+            poolObject.OnCreateFromPool();
             info.ActiveCount++;
             return instance;
         }
@@ -514,7 +514,7 @@ namespace NSJ_EasyPoolKit
             // Rigidbody 초기화
             WakeUpRigidBody(poolObject);
 
-            poolObject.InitPooledObject();
+            poolObject.OnCreateFromPool();
             info.ActiveCount++;
             return instance;
         }
@@ -543,6 +543,9 @@ namespace NSJ_EasyPoolKit
 
             // RigidBody 초기화
             SleepRigidbody(poolObject);
+
+            // 리턴하기 전에 호출 
+            poolObject.OnReturnToPool();
 
             instance.gameObject.SetActive(false);
             info.Pool.Push(instance.gameObject);
@@ -578,9 +581,9 @@ namespace NSJ_EasyPoolKit
             Rigidbody2D rb2D = instance.CachedRb2D;
             if (rb2D != null)
             {
-                rb2d.velocity = Vector2.zero;
-                rb2d.angularVelocity = 0f;
-                rb2d.Sleep();
+                rb2D.velocity = Vector2.zero;
+                rb2D.angularVelocity = 0f;
+                rb2D.Sleep();
             }
 #endif
         }
@@ -613,9 +616,9 @@ namespace NSJ_EasyPoolKit
             Rigidbody2D rb2D = instance.CachedRb2D;
             if (rb2D != null)
             {
-                rb2d.velocity = Vector2.zero;
-                rb2d.angularVelocity = 0f;
-                rb2d.WakeUp();
+                rb2D.velocity = Vector2.zero;
+                rb2D.angularVelocity = 0f;
+                rb2D.WakeUp();
             }
 #endif
         }

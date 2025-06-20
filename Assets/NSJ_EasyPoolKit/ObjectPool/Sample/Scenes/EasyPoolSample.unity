@@ -535,7 +535,7 @@ MonoBehaviour:
   - {fileID: 7157153779308068874, guid: 73caf48ec3012b7469a3c72f5e25c912, type: 3}
   - {fileID: 7587393722906881744, guid: db305f52925c285488cef3df73dd2a1b, type: 3}
   _randomRange: {x: 10, y: 0, z: 10}
-  _delay: 0.05
+  _delay: 0.01
   _returnDelay: 5
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
