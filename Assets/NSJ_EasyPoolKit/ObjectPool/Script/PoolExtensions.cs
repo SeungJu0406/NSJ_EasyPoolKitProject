@@ -125,5 +125,10 @@ namespace NSJ_EasyPoolKit
 
             return poolInfo;
         }
+
+        public static T GetOrAddComponent<T>(this GameObject obj) where T : Component
+        {
+            return obj.TryGetComponent(out T comp) ? comp : obj.AddComponent<T>();
+        }
     }
 }

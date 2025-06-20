@@ -1,8 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -42,7 +40,7 @@ namespace NSJ_EasyPoolKit
                 else
                 {
 #if UNITY_EDITOR
-                    if (EditorApplication.isPlayingOrWillChangePlaymode == false)
+                    if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode == false)
                         return null;
 #endif
                     // 새로운 ObjectPool GameObject 생성 및 할당
