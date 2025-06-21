@@ -9,8 +9,11 @@ namespace NSJ_EasyPoolKit
         [SerializeField] private Vector3 _randomRange;
         [SerializeField] private float _delay;
         [SerializeField] private float _returnDelay;
+
+        private MockObjectPool MockPoolInfo= new();
         void Start()
         {
+            ObjectPool.SetPool(MockPoolInfo);
             StartCoroutine(SpawnRoutine());
         }
 

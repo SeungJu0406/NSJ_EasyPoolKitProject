@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -15,7 +16,7 @@ namespace NSJ_EasyPoolKit
     /// 오브젝트 풀링을 위한 메인 클래스입니다.
     /// 자동 반환, 딜레이 반환, 재사용 가능한 풀 구조를 제공합니다.
     /// </summary>
-    public class ObjectPool : MonoBehaviour
+    public class EasyObjectPool : MonoBehaviour, IObjectPool
     {
         /// <summary>
         /// 풀 오브젝트 최대 유지 시간입니다. 시간이 지나면 자동 비활성화됩니다.
@@ -23,35 +24,38 @@ namespace NSJ_EasyPoolKit
 
         [HideInInspector] public float MaxTimer = 600f;
 
+        private static bool s_isApplicationQuit = false;
 
-
-        private static ObjectPool _instance;
+        private static EasyObjectPool _instance;
         /// <summary>
-        /// ObjectPool 싱글톤 인스턴스입니다. 자동 생성됩니다.
+        /// EasyObjectPool 싱글톤 인스턴스입니다. 자동 생성됩니다.
         /// </summary>
-        public static ObjectPool Instance
+        public static EasyObjectPool Instance
         {
             get
             {
-                if (_instance != null)
-                {
-                    return _instance;
-                }
-                else
-                {
-#if UNITY_EDITOR
-                    if (UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode == false)
-                        return null;
-#endif
-                    // 새로운 ObjectPool GameObject 생성 및 할당
-                    GameObject newPool = new GameObject("ObjectPool");
-                    ObjectPool pool = newPool.AddComponent<ObjectPool>();
-                    return pool;
-                }
+                return CreatePool();
             }
             set
             {
                 _instance = value;
+            }
+        }
+
+        public static EasyObjectPool CreatePool()
+        {
+            if (_instance != null)
+            {
+                return _instance;
+            }
+            else
+            {
+                if (s_isApplicationQuit == true)
+                    return null;
+                // 새로운 EasyObjectPool GameObject 생성 및 할당
+                GameObject newPool = new GameObject("EasyObjectPool");
+                EasyObjectPool pool = newPool.AddComponent<EasyObjectPool>();
+                return pool;
             }
         }
         /// <summary>
@@ -113,11 +117,6 @@ namespace NSJ_EasyPoolKit
             }
             else
                 Destroy(gameObject);
-
-#if UNITY_EDITOR
-#else
-            gameObject.hideFlags = HideFlags.DontSave;        // 빌드시 완전 제외
-#endif
         }
 
 
@@ -126,7 +125,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져옵니다.
         /// </summary>
-        public static GameObject Get(GameObject prefab)
+        public GameObject Get(GameObject prefab)
         {
             PoolInfo info = FindPool(prefab);
             GameObject instance = ProcessGet(info);
@@ -135,7 +134,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다.
         /// </summary>
-        public static GameObject Get(GameObject prefab, Transform transform, bool worldPositionStay = false)
+        public GameObject Get(GameObject prefab, Transform transform, bool worldPositionStay = false)
         {
             PoolInfo info = FindPool(prefab);
             GameObject instance = ProcessGet(info, transform, worldPositionStay);
@@ -144,7 +143,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 지정된 위치와 회전을 설정합니다.
         /// </summary>
-        public static GameObject Get(GameObject prefab, Vector3 pos, Quaternion rot)
+        public GameObject Get(GameObject prefab, Vector3 pos, Quaternion rot)
         {
             PoolInfo info = FindPool(prefab);
             GameObject instance = ProcessGet(info, pos, rot);
@@ -154,7 +153,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 반환합니다.
         /// </summary>
-        public static T Get<T>(T prefab) where T : Component
+        public T Get<T>(T prefab) where T : Component
         {
             PoolInfo info = FindPool(prefab.gameObject);
             GameObject instance = ProcessGet(info);
@@ -165,7 +164,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다.
         /// </summary>
-        public static T Get<T>(T prefab, Transform transform, bool worldPositionStay = false) where T : Component
+        public T Get<T>(T prefab, Transform transform, bool worldPositionStay = false) where T : Component
         {
             PoolInfo info = FindPool(prefab.gameObject);
             GameObject instance = ProcessGet(info, transform, worldPositionStay);
@@ -176,7 +175,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 지정된 위치와 회전을 설정합니다.
         /// </summary>
-        public static T Get<T>(T prefab, Vector3 pos, Quaternion rot) where T : Component
+        public T Get<T>(T prefab, Vector3 pos, Quaternion rot) where T : Component
         {
             PoolInfo info = FindPool(prefab.gameObject);
             GameObject instance = ProcessGet(info, pos, rot);
@@ -190,7 +189,7 @@ namespace NSJ_EasyPoolKit
         /// </summary>
         /// <param name="resources"></param>
         /// <returns></returns>
-        public static GameObject ResourcesGet(string resources)
+        public GameObject ResourcesGet(string resources)
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info);
@@ -199,7 +198,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         ///  풀에서 오브젝트를 가져오고, 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다.(Resources)
         /// </summary>
-        public static GameObject ResourcesGet(string resources, Transform transform, bool worldPositionStay = false)
+        public GameObject ResourcesGet(string resources, Transform transform, bool worldPositionStay = false)
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info, transform, worldPositionStay);
@@ -209,7 +208,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 지정된 위치와 회전을 설정합니다.(Resources)
         /// </summary>
-        public static GameObject ResourcesGet(string resources, Vector3 pos, Quaternion rot)
+        public GameObject ResourcesGet(string resources, Vector3 pos, Quaternion rot)
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info, pos, rot);
@@ -218,7 +217,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 반환합니다.
         /// </summary>
-        public static T ResourcesGet<T>(string resources) where T : Component
+        public T ResourcesGet<T>(string resources) where T : Component
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info);
@@ -229,7 +228,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다.
         /// </summary>
-        public static T ResourcesGet<T>(string resources, Transform transform, bool worldPositionStay = false) where T : Component
+        public T ResourcesGet<T>(string resources, Transform transform, bool worldPositionStay = false) where T : Component
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info, transform, worldPositionStay);
@@ -240,7 +239,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 해당 컴포넌트를 지정된 위치와 회전을 설정합니다.
         /// </summary>
-        public static T ResourcesGet<T>(string resources, Vector3 pos, Quaternion rot) where T : Component
+        public T ResourcesGet<T>(string resources, Vector3 pos, Quaternion rot) where T : Component
         {
             PoolInfo info = FindResourcePool(resources);
             GameObject instance = ProcessGet(info, pos, rot);
@@ -254,21 +253,21 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 반환합니다. 반환된 오브젝트는 비활성화되고, 풀에 다시 추가됩니다.
         /// </summary>
-        public static IPoolInfoReadOnly Return(GameObject instance)
+        public IPoolInfoReadOnly Return(GameObject instance)
         {
             return ProcessReturn(instance.gameObject);
         }
         /// <summary>
         /// 풀에서 오브젝트를 반환합니다. 반환된 오브젝트는 비활성화되고, 풀에 다시 추가됩니다.
         /// </summary>
-        public static IPoolInfoReadOnly Return<T>(T instance) where T : Component
+        public IPoolInfoReadOnly Return<T>(T instance) where T : Component
         {
             return ProcessReturn(instance.gameObject);
         }
         /// <summary>
         /// 풀에서 오브젝트를 반환합니다. 반환된 오브젝트는 비활성화되고, 지정된 지연 시간 후에 풀에 다시 추가됩니다.
         /// </summary>
-        public static void Return(GameObject instance, float delay)
+        public void Return(GameObject instance, float delay)
         {
             if (instance == null)
                 return;
@@ -294,7 +293,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 반환합니다. 반환된 오브젝트는 비활성화되고, 지정된 지연 시간 후에 풀에 다시 추가됩니다.
         /// </summary>
-        public static void Return<T>(T instance, float delay) where T : Component
+        public void Return<T>(T instance, float delay) where T : Component
         {
             Return(instance.gameObject, delay);
         }
@@ -318,7 +317,7 @@ namespace NSJ_EasyPoolKit
         /// 해당 프리팹에 대한 풀 정보를 찾거나, 없으면 새로 생성합니다.
         /// 프리팹의 인스턴스 ID를 기준으로 Dictionary에서 관리됩니다.
         /// </summary>
-        private static PoolInfo FindPool(GameObject poolPrefab)
+        private PoolInfo FindPool(GameObject poolPrefab)
         {
             if (poolPrefab == null)
             {
@@ -343,7 +342,7 @@ namespace NSJ_EasyPoolKit
         /// 해당 프리팹에 대한 풀 정보를 찾거나, 없으면 새로 생성합니다.
         /// 프리팹의 인스턴스 ID를 기준으로 Dictionary에서 관리됩니다.
         /// </summary>
-        private static PoolInfo FindResourcePool(string resources)
+        private PoolInfo FindResourcePool(string resources)
         {
             Dictionary<string, int> resourcePool = Instance._resourcesPoolDic;
             PoolInfo pool = default;
@@ -370,7 +369,7 @@ namespace NSJ_EasyPoolKit
             return pool;
         }
 
-        private static PoolInfo RegisterPool(GameObject poolPrefab, int prefabID)
+        private PoolInfo RegisterPool(GameObject poolPrefab, int prefabID)
         {
             // 풀용 부모 오브젝트 생성 후 계층 구조 정리
             Transform newParent = new GameObject(poolPrefab.name).transform;
@@ -390,7 +389,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀 정보 생성
         /// </summary>
-        private static PoolInfo GetPoolInfo(Stack<GameObject> pool, GameObject prefab, Transform parent)
+        private PoolInfo GetPoolInfo(Stack<GameObject> pool, GameObject prefab, Transform parent)
         {
             PoolInfo info = new PoolInfo();
             info.Pool = pool;
@@ -402,7 +401,7 @@ namespace NSJ_EasyPoolKit
         /// PooledObject 컴포넌트를 오브젝트에 추가하거나 가져옵니다.
         /// PoolInfo를 연결하고, 풀 개수를 증가시키며, 자동 비활성화 이벤트를 구독합니다.
         /// </summary>
-        private static PooledObject AddPoolObjectComponent(GameObject instance, PoolInfo info)
+        private PooledObject AddPoolObjectComponent(GameObject instance, PoolInfo info)
         {
             PooledObject poolObject = instance.GetOrAddComponent<PooledObject>();
             poolObject.PoolInfo = info;
@@ -415,7 +414,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 오브젝트를 풀에서 가져오는 실제 처리 로직입니다. 오브젝트가 남아있으면 재사용하고, 없으면 새로 생성합니다.
         /// </summary>
-        private static GameObject ProcessGet(PoolInfo info)
+        private GameObject ProcessGet(PoolInfo info)
         {
             GameObject instance = null;
             PooledObject poolObject = null;
@@ -448,7 +447,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 지정된 Transform에 위치시키며, 월드 포지션을 유지할지 여부를 설정합니다. 해당 프리팹에 대한 풀 정보를 찾고, 활성화된 오브젝트가 있으면 반환하고, 없으면 새로 생성합니다.
         /// </summary>
-        private static GameObject ProcessGet(PoolInfo info, Transform transform, bool worldPositionStay = false)
+        private GameObject ProcessGet(PoolInfo info, Transform transform, bool worldPositionStay = false)
         {
             GameObject instance = null;
             PooledObject poolObject = null;
@@ -486,7 +485,7 @@ namespace NSJ_EasyPoolKit
         /// <summary>
         /// 풀에서 오브젝트를 가져오고, 지정된 위치와 회전을 설정합니다. 해당 프리팹에 대한 풀 정보를 찾고, 활성화된 오브젝트가 있으면 반환하고, 없으면 새로 생성합니다.
         /// </summary>
-        private static GameObject ProcessGet(PoolInfo info, Vector3 pos, Quaternion rot)
+        private GameObject ProcessGet(PoolInfo info, Vector3 pos, Quaternion rot)
         {
             GameObject instance = null;
 
@@ -520,7 +519,7 @@ namespace NSJ_EasyPoolKit
         /// 오브젝트를 풀에 반환하고 비활성화 후 다시 스택에 넣습니다.
         /// 위치, 회전, 스케일, 부모 등 초기 상태로 복원합니다.
         /// </summary>
-        private static IPoolInfoReadOnly ProcessReturn(GameObject instance)
+        private IPoolInfoReadOnly ProcessReturn(GameObject instance)
         {
             //CreateObjectPool();
             if (instance == null)
@@ -708,6 +707,16 @@ namespace NSJ_EasyPoolKit
                 _delayDic.Add(normalize, new WaitForSeconds(normalize));
             }
             return _delayDic[normalize];
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void OnRuntimeLoad()
+        {
+            s_isApplicationQuit = false;
+        }
+        private void OnApplicationQuit()
+        {
+            s_isApplicationQuit = true;
         }
     }
 }

@@ -43,7 +43,7 @@ namespace NSJ_EasyPoolKit
         public static GameObject OnDebug(this GameObject instance, string log = default)
         {
             PooledObject pooledObject = instance.GetComponent<PooledObject>();
-            ObjectPool.PoolInfo poolInfo = pooledObject.PoolInfo;
+            EasyObjectPool.PoolInfo poolInfo = pooledObject.PoolInfo;
 
             if (log == default)
             {
@@ -73,7 +73,7 @@ namespace NSJ_EasyPoolKit
         public static GameObject OnDebugReturn(this GameObject instance, string log = default)
         {
             PooledObject pooledObject = instance.GetComponent<PooledObject>();
-            ObjectPool.PoolInfo poolInfo = pooledObject.PoolInfo;
+            EasyObjectPool.PoolInfo poolInfo = pooledObject.PoolInfo;
 
             Action callback = null;
             callback = () =>
